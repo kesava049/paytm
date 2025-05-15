@@ -1,0 +1,113 @@
+const express = require('express');
+const router = express.Router();
+
+const User = require('../db');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const zod = require('zod');
+const authMiddleware = require('../middleware');
+
+const signupSchema = zod.object({
+    username: zod.string().email(),
+    password: zod.string(),
+    firstName: zod.string(),
+    lastName: zod.string()
+});
+
+router.post('/signup', async (req, res) => {
+    const { username, password, firstName, lastName } = req.body;
+
+    const {success} = signupSchema.safeParse(req.body);
+    if (!success) {
+        return res.status(411).json({ message: 'Email already taken / Invalid inputs' });
+    }
+    
+    try {
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Username already exists' });
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await User.create({
+            username,
+            password: hashedPassword,
+            firstName,
+            lastName
+        });
+        
+        const token = jwt.sign( username, process.env.JWT_SECRET);
+        res.status(201).json({ 
+            message: 'User created successfully',
+            token,
+         });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.post('/signin', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid username or password' });
+        }
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ message: 'Invalid username or password' });
+        }
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.status(200).json({ token, user: { id: user._id, username } });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+const updateBody = zod.object({
+    password: zod.string().optional(),
+    firstName: zod.string().optional(),
+    lastName: zod.string().optional(),
+});
+
+router.put('/update', authMiddleware, async (req, res) => {
+    const {success} = updateBody.safeParse(req.body);   
+    if (!success) {
+        return res.status(411).json({ message: 'Invalid inputs' });
+    }
+    await User.updateOne(req.body, { id: req.user.id });
+    res.status(200).json({ message: 'User updated successfully' });
+
+})
+
+
+router.get('/bulk', async (req, res) => {
+    const filter = req.query.filter || "";
+
+    const users = await User.find({
+        $or: [{
+            firstName: {
+                "$regex": filter
+            }
+        }, {
+            lastName: {
+                "$regex": filter
+            }
+        }]
+    })
+
+    res.json({
+        users: users.map(user => ({
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            _id: user._id
+        }))
+    })
+})
+
+module.exports = router;

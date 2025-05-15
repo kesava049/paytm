@@ -1,22 +1,22 @@
 const express = require("express");
 require("dotenv").config();
+const cors = require('cors');
 const app = express();
 const mongoose = require('mongoose');
 
 app.use(express.json());
+app.use(cors());
 
-// Routes
-const signupRoutes = require('./routes/signup');    
-const signinRoutes = require('./routes/signin');
+const mainRouter = require('./routes/index');
 
-// API routes
-app.use('/api/signup', signupRoutes);
-app.use('/api/signin', signinRoutes);
+app.use('/api/v1', mainRouter);
 
-// 404 handler
+
 app.use((req, res) => {
     res.status(404).json({ message: 'Route not found' });
 });
+
+
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
