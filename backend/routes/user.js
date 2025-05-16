@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const User = require('../db');
+const { User, Account } = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const zod = require('zod');
@@ -19,7 +19,7 @@ router.post('/signup', async (req, res) => {
 
     const {success} = signupSchema.safeParse(req.body);
     if (!success) {
-        return res.status(411).json({ message: 'Email already taken / Invalid inputs' });
+        return res.status(411).json({ message: 'Invalid inputs' });
     }
     
     try {
@@ -28,14 +28,22 @@ router.post('/signup', async (req, res) => {
             return res.status(400).json({ message: 'Username already exists' });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        await User.create({
+
+        const user = await User.create({
             username,
             password: hashedPassword,
             firstName,
             lastName
         });
+
+        // Creating New Account
+        const userId = user._id;
+        await Account.create({
+            userId,
+            balance: 1 + Math.random() * 1000
+        });
         
-        const token = jwt.sign( username, process.env.JWT_SECRET);
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.status(201).json({ 
             message: 'User created successfully',
             token,
@@ -79,9 +87,8 @@ router.put('/update', authMiddleware, async (req, res) => {
     if (!success) {
         return res.status(411).json({ message: 'Invalid inputs' });
     }
-    await User.updateOne(req.body, { id: req.user.id });
+    await User.updateOne({ _id: req.userId }, req.body);
     res.status(200).json({ message: 'User updated successfully' });
-
 })
 
 
