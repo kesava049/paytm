@@ -38,16 +38,19 @@ router.post('/signup', async (req, res) => {
 
         // Creating New Account
         const userId = user._id;
-        await Account.create({
+        const account = await Account.create({
             userId,
             balance: 1 + Math.random() * 1000
         });
         
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.status(201).json({ 
-            message: 'User created successfully',
-            token,
-         });
+        res.status(200).json({ token, user: {
+            id: user._id,
+            username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            balance: account.balance
+        } });
 
     } catch (error) {
         console.error(error);
@@ -67,8 +70,18 @@ router.post('/signin', async (req, res) => {
         if (!isPasswordValid) {
             return res.status(400).json({ message: 'Invalid username or password' });
         }
+        
+        // Get the account to include balance
+        const account = await Account.findOne({ userId: user._id });
+        
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.status(200).json({ token, user: { id: user._id, username } });
+        res.status(200).json({ token, user: {
+            id: user._id,
+            username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            balance: account ? account.balance : 0
+        } });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });

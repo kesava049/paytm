@@ -6,6 +6,7 @@ import Button from "../components/Button";
 import  BottomWarning  from "../components/BottomWarning";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+
 const Signup = () => {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
@@ -41,6 +42,7 @@ const Signup = () => {
                             lastName,
                         })
                         localStorage.setItem("token", response.data.token);
+                        localStorage.setItem("user", response.data.user);
                         navigate("/dashboard");
                     }}label={"Sign up"} />
                 </div>
