@@ -4,7 +4,7 @@ import Signup from './pages/Signup'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Signin from './pages/Signin'
 import Dashboard from './pages/Dashboard'
-import SendMoney from './components/SendMoney'
+import SendMoney from './pages/SendMoney'
 
 function App() {
 
