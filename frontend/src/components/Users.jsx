@@ -9,15 +9,21 @@ const Users = () => {
     const [filter, setFilter] = useState("");
 
     useEffect(() => {
-        axios.get("http://localhost:3000/api/v1/user/bulk?filter=" + filter)
-            .then((response) => {
-                setUsers(response.data.users || []);
-            })
-            .catch(error => {
-                console.error("Error fetching users:", error);
-                setUsers([]);
-            })
-    }, [filter])
+    const token = localStorage.getItem("token");
+
+    axios.get("http://localhost:3000/api/v1/user/bulk?filter=" + filter, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+    .then((response) => {
+        setUsers(response.data.users || []);
+    })
+    .catch(error => {
+        console.error("Error fetching users:", error);
+        setUsers([]);
+    })
+}, [filter]);
 
     return <>
         <div className="font-bold mt-6 text-lg">

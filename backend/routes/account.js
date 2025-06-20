@@ -36,12 +36,12 @@ router.post('/transfer', authMiddleware, async(req, res) => {
     session.startTransaction();
     const { to, amount } = req.body;
     
-    // Debug logs
-    console.log("Transfer request:", { 
-        fromUserId: req.userId, 
-        toUserId: to, 
-        amount: amount 
-    });
+    // Debuging logs
+    // console.log("Transfer request:", { 
+    //     fromUserId: req.userId, 
+    //     toUserId: to, 
+    //     amount: amount 
+    // });
 
     const account = await Account.findOne({ userId: req.userId }).session(session);
 
@@ -53,7 +53,6 @@ router.post('/transfer', authMiddleware, async(req, res) => {
     }
     const toAccount = await Account.findOne({ userId: to }).session(session);  
     
-    // More debug info if account is not found
     if(!toAccount){
         console.log("Recipient account not found for userId:", to);
         await session.abortTransaction();

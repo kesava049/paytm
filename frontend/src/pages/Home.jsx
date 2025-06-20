@@ -1,4 +1,3 @@
-import React from "react";
 import Heading from "../components/Heading";
 import SubHeading from "../components/SubHeading";
 import Button from "../components/Button";
